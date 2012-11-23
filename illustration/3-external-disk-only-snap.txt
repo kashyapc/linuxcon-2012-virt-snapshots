@@ -1,0 +1,3 @@
+#!/bin/bash
+
+virsh snapshot-create-as f18-base snap1 "snap1-desc" --disk-only --atomic 

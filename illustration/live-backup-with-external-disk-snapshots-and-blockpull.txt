@@ -1,0 +1,95 @@
+        (1) List the block device associated with a guest. 
+                ======================
+                # virsh domblklist f17-base
+                Target     Source
+                ---------------------------------------------
+                vda        /export/vmimages/f17-base.qcow2
+
+                #
+                ======================
+
+        (2) Create external disk-only snapshot (while the guest is running).
+                =====================
+                # virsh snapshot-create-as --domain f17-base snap1 snap1-desc \
+                --disk-only --diskspec vda,snapshot=external,file=/export/vmimages/sn1-of-f17-base.qcow2 \
+                --atomic
+                Domain snapshot snap1 created
+                #
+                ======================
+
+        (3) Now, list the block device associated(use cmd from step-1, above)
+            with the guest,again, to ensure it reflects the new overlay image as
+            the current block device in use. 
+                ======================
+                # virsh domblklist f17-base
+                Target     Source
+                ----------------------------------------------------
+                vda        /export/vmimages/sn1-of-f17-base.qcow2
+
+                #
+                ======================
+
+        (4) Here, backup the orignial disk image /export/vmimages/f17-base.qcow2
+            using rsync or any other preferred method, while the guest is now 
+            writing all its new changes into sn1-of-f17-base.qcow2.
+        
+        (5) Now, let's say, there are changes accumulated over time into
+            sn1-of-f17-base.qcow2. We can now merge the contents from orignial disk
+            image(f17-base) into the current disk using 'blockpull'. Two possible here:
+            
+            (a) Say, we had this chain:  [base] <-- [sn1] (active)
+
+                 We can make sn1-of-f17-base.qcow2 a standalone image by
+                 pulling/merging contents from the orignial disk image
+                 (f17-base.qcow2). Resulting in sn1-of-f17-base becoming a self-contained
+                 disk image without any backing file.
+
+                 ======================
+                 # virsh blockpull --domain f17-base --path \
+                 /var/lib/libvirt/images/sn1-of-f17-base.qcow2 --verbose --wait
+                 ======================
+
+                 The resultant chain will be: [sn1] 
+                 (which is an active, self-contained image with all the data
+                 from [base] pulled into it)
+
+            (b) If we have more snapshots, say if we had the below image chain: 
+
+                [base] <-- [sn1] <-- [sn2] <-- [active],
+
+                we can shorten it to:
+
+                [base] <-- [sn1] <-- [active]
+
+                by doing:
+                ======================
+                # virsh blockpull --domain f17-base --path \
+                /var/lib/libvirt/images/active.qcow2 --base /var/lib/libvirt/sn1.qcow2 --verbose --wait
+                ======================
+                The above command pulls the data from [sn2] into [active], and changes the backing file of [active] to [sn1].
+
+                
+                We can again do 'blockpull' here, with the above shortened chain, 
+                resulting in  making [active] standalone, with the below command:
+                ======================
+                # virsh blockpull --domain f17-base --path \
+                /var/lib/libvirt/images/active.qcow2 --verbose --wait
+                ======================
+                The above command pulls data from [sn1] and [base] 
+                into [active] and makes it a self-contained image without any backing file,
+                resulting in the chain with a single image:  [active] 
+               
+            
+                NOTE: 'blockpull' needs to be done for every disk image that was
+                snapshotted (by optionally supplying --base. If a --base option
+                is not supplied, the current disk image will pull data from its
+                entire backing chain, & makes it standalone without any backing
+                file.)
+
+        (6) Once the 'blockpull' operation above is complete, we can clean-up
+            the tracking of snapshots by libvirt to reflect the new reality:
+                
+                ======================
+                # virsh snapshot-delete $dom $name --metadata
+                ======================
+

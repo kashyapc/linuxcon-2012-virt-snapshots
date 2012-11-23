@@ -1,0 +1,431 @@
+[*** Example-1: Thin provisioning using QCOW2 overlays]
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        (1) List the root base image which has installed plain vanilla minimal F17 OS on it.
+                ======================
+                # qemu-img info /home/kashyap/vmimages/base-f17.qcow2 
+                image: /home/kashyap/vmimages/base-f17.qcow2
+                file format: qcow2
+                virtual size: 5.0G (5368709120 bytes)
+                disk size: 5.0G
+                cluster_size: 65536
+                ======================
+
+        (2) To see if it's working, we can do a quick check using qemu-kvm to
+            boot the disk image on the shell (side note: for this to run successfully, the
+            guest kernel should have serial console enabled on kernel cmd-line -  ‘console=tty0
+            console=ttyS0,115200′):
+
+                ======================
+                # qemu-kvm -enable-kvm -m 1024 base-f17.qcow2 -nographic
+                ======================
+
+        (3) Now, using our above base image as a backing file, create a
+            Fedora-17 machine(overlay) using 'qemu-img'
+
+                ======================
+                # qemu-img create -o 'backing_file=/home/kashyap/vmimages/base-f17.qcow2,backing_fmt=qcow2' -f qcow2 /home/kashyap/vmimages/overlay-1.qcow2
+                Formatting '/home/kashyap/vmimages/overlay-1.qcow2', fmt=qcow2 size=5368709120 backing_file='/home/kashyap/vmimages/base-f17.qcow2' backing_fmt='qcow2' eancryption=off cluster_size=65536 lazy_refcounts=off 
+                ======================
+
+        (4) Run, qemu-img on the overlay file to see its
+            information(specifically backing file; & the actual disk image size):
+
+                ======================
+                # qemu-img info /home/kashyap/vmimages/overlay-1.qcow2
+                image: /home/kashyap/vmimages/overlay-1.qcow2
+                file format: qcow2
+                virtual size: 5.0G (5368709120 bytes)
+                disk size: 196K
+                cluster_size: 65536
+                backing file: /home/kashyap/vmimages/base-f17.qcow2
+                ======================
+            Mention: Once we have a image chain with a depth of more than 1, the ONLY file we 
+                     can safely edit is the 'leaf' image in the chain.
+  
+        (5) Now, boot into the overlay image using 'qemu-kvm' 
+            (or via qemu git - qemu-system-x86_64-oct21-git  -enable-kvm -m 2048 /kashyap/home/vmimages/base-f17.img -nographic)
+
+                 ======================
+                 # qemu-kvm -enable-kvm -m 1024 overlay-1.qcow2 -nographic
+                 ======================
+
+        (5.1) Optionally, create another overlay-2 using base-f17.qcow2 as its backing file & boot into it.
+ 
+        (6) Note that, officially, the right way to boot the guest(overlays or
+            otherwise) is via Libvirt('virsh') ( & not via invoking 'qemu-kvm'
+            directly). To exemplify:
+                - Create/re-purpose a libvirt xml file /etc/libvirt/qemu/overlay-1.xml
+                - Edit the overlay-1.xml - Update 'name', 'uuid', 'source file'
+                  path, & 'mac address' to reflect the overlay-1 attributes.
+                - Then define & startthe overlay :
+                    # virsh define overlay-1
+                    # virsh start overlay-1 --console
+                
+
+
+
+[*** Example-2: Snapshot creation(External, live): ***]
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        (1) List the block device associated with a guest. 
+                ======================
+                # virsh domblklist f17-base
+                Target     Source
+                ---------------------------------------------
+                vda        /export/vmimages/f17-base.qcow2
+
+                #
+                ======================
+
+
+        (2) Create external disk-only snapshot (while the guest is running).
+                ======================
+                # virsh snapshot-create-as f18-base snap1 "snap1-desc"
+                --disk-only --atomic 
+                ======================
+                
+                More specific command:
+                =====================
+                # virsh snapshot-create-as --domain f17-base snap1 snap1-desc \
+                --disk-only --diskspec vda,snapshot=external,file=/export/vmimages/sn1-of-f17-base.qcow2 \
+                --atomic
+                Domain snapshot snap1 created
+                #
+                ======================
+
+                    * Once the above command is issued, the original disk-image
+                    of f17-base will become the backing_file & a new overlay
+                    image is created to track the new changes. Here on, libvirt
+                    will use this overlay for further write operations(while
+                    using the original image as a read-only backing_file).
+
+        (3) Now, list the block device associated(use cmd from step-1, above)
+            with the guest,again, to ensure it reflects the new overlay image as
+            the current block device in use. 
+                ======================
+                # virsh domblklist f17-base
+                Target     Source
+                ----------------------------------------------------
+                vda        /export/vmimages/sn1-of-f17-base.qcow2
+
+                #
+                ======================
+               
+
+
+*** Example-3: Reducing the snapshot chain with "blockcommit" ***
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+[1] Create disk-only live snapshots :
+
+    - Before taking a snapshot, Aad a textfile (say, file1.txt before taking
+      snap1, file2.txt before taking snap2...in /export), to distinguish
+      content between snapshots:
+
+                ======================
+                - Add a text file(file1.txt) by logging into the live guest - (# virsh
+                  console commitraw-base).
+
+                [root@moon qemu]# virsh snapshot-create-as --domain commitraw-base snap1 snap1-desc --disk-only --diskspec vda,snapshot=external,file=/export/vmimgs2/snap1-c-rawbase.qcow2 --atomic
+                Domain snapshot snap1 created
+                [root@moon qemu]# 
+                
+                - Add file2.txt in the live guest.
+
+                [root@moon qemu]# virsh snapshot-create-as --domain commitraw-base snap2 snap2-desc --disk-only --diskspec vda,snapshot=external,file=/export/vmimgs2/snap2-c-rawbase.qcow2 --atomic
+                Domain snapshot snap2 created
+                [root@moon qemu]# 
+
+                - Add file3.txt in the live guest.
+
+                [root@moon qemu]# virsh snapshot-create-as --domain commitraw-base snap3 snap3-desc --disk-only --diskspec vda,snapshot=external,file=/export/vmimgs2/snap3-c-rawbase.qcow2 --atomic
+                Domain snapshot snap3 created
+                [root@moon qemu]# 
+                
+                - Add file4.txt in the live guest.
+
+                [root@moon qemu]# virsh snapshot-create-as --domain commitraw-base snap4 snap4-desc --disk-only --diskspec vda,snapshot=external,file=/export/vmimgs2/snap4-c-rawbase.qcow2 --atomic
+                Domain snapshot snap4 created
+                [root@moon qemu]# 
+                ======================
+
+[2] List the backing chain, BEFORE blockcommit (it can be noticed that the Base image is RAW)
+
+                ======================
+                [kashyap@moon qemu-n]$ sudo ./qemu-img info --backing-chain /export/vmimgs2/snap4-c-rawbase.qcow2 
+                image: /export/vmimgs2/snap4-c-rawbase.qcow2
+                file format: qcow2
+                virtual size: 1.0G (1073741824 bytes)
+                disk size: 520K
+                cluster_size: 65536
+                backing file: /export/vmimgs2/snap3-c-rawbase.qcow2
+                backing file format: qcow2
+                
+                image: /export/vmimgs2/snap3-c-rawbase.qcow2
+                file format: qcow2
+                virtual size: 1.0G (1073741824 bytes)
+                disk size: 776K
+                cluster_size: 65536
+                backing file: /export/vmimgs2/snap2-c-rawbase.qcow2
+                backing file format: qcow2
+                
+                image: /export/vmimgs2/snap2-c-rawbase.qcow2
+                file format: qcow2
+                virtual size: 1.0G (1073741824 bytes)
+                disk size: 712K
+                cluster_size: 65536
+                backing file: /export/vmimgs2/snap1-c-rawbase.qcow2
+                backing file format: qcow2
+                
+                image: /export/vmimgs2/snap1-c-rawbase.qcow2
+                file format: qcow2
+                virtual size: 1.0G (1073741824 bytes)
+                disk size: 392K
+                cluster_size: 65536
+                backing file: /export/vmimgs2/commitraw-base-f17.img
+                backing file format: raw
+                
+                image: /export/vmimgs2/commitraw-base-f17.img
+                file format: raw
+                virtual size: 1.0G (1073741824 bytes)
+                disk size: 699M
+                [kashyap@moon qemu-n]$ 
+                ======================
+
+[3] List files in /export in base & all snapshots BEFORE 'blockcommit'
+
+                ======================
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/commitraw-base-f17.img ls /export
+                file1.txt
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/snap1-c-rawbase.qcow2 ls /export
+                file1.txt
+                file2.txt
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/snap2-c-rawbase.qcow2 ls /export
+                file1.txt
+                file2.txt
+                file3.txt
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/snap3-c-rawbase.qcow2 ls /export
+                file1.txt
+                file2.txt
+                file3.txt
+                file4.txt
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/snap4-c-rawbase.qcow2 ls /export
+                file1.txt
+                file2.txt
+                file3.txt
+                file4.txt
+                ======================
+
+[4] List the disk image sizes BEFORE 'blockcommit'
+
+                ======================
+                [root@moon qemu]# ls -lash /export/vmimgs2/*rawbase*
+                392K -rw-------. 1 qemu qemu 448K Oct 21 18:38 /export/vmimgs2/snap1-c-rawbase.qcow2
+                712K -rw-------. 1 qemu qemu 768K Oct 21 18:39 /export/vmimgs2/snap2-c-rawbase.qcow2
+                776K -rw-------. 1 qemu qemu 832K Oct 21 18:39 /export/vmimgs2/snap3-c-rawbase.qcow2
+                712K -rw-------. 1 qemu qemu 768K Oct 21 18:40 /export/vmimgs2/snap4-c-rawbase.qcow2
+                [root@moon qemu]# ls -lash /export/vmimgs2/commitraw-base-f17.img
+                700M -rw-r--r--. 1 qemu qemu 1.0G Oct 21 18:35 /export/vmimgs2/commitraw-base-f17.img
+                [root@moon qemu]# 
+                ======================
+
+[5] Recursively merge overlays into their spective backing files:  sn3 into sn2 ; sn2 into sn1 ; sn1 into base(RAW)
+
+                ======================
+                [root@moon qemu]# virsh blockcommit --domain commitraw-base vda --base /export/vmimgs2/snap2-c-rawbase.qcow2 --top /export/vmimgs2/snap3-c-rawbase.qcow2 --wait --verbose
+                Block Commit: [100 %]
+                Commit complete
+                ======================
+                [root@moon qemu]# virsh blockcommit --domain commitraw-base vda --base /export/vmimgs2/snap1-c-rawbase.qcow2 --top /export/vmimgs2/snap2-c-rawbase.qcow2 --wait --verbose                                                                                                                               
+                Block Commit: [100 %]
+                Commit complete
+                ======================
+                [root@moon qemu]# virsh blockcommit --domain commitraw-base vda --base /export/vmimgs2/commitraw-base-f17.img --top /export/vmimgs2/snap1-c-rawbase.qcow2 --wait --verbose
+                Block Commit: [100 %]
+                Commit complete
+                [root@moon qemu]# 
+                ======================
+
+
+[6] Now, list the backing chain info AFTER 'blockcommit' of snap4-c-rawbase.qcow2 (the current active-layer) to reflect the reduced backing chain.
+                ======================
+                [kashyap@moon qemu-n]$ sudo ./qemu-img info --backing-chain /export/vmimgs2/snap4-c-rawbase.qcow2 
+                image: /export/vmimgs2/snap4-c-rawbase.qcow2
+                file format: qcow2
+                virtual size: 1.0G (1073741824 bytes)
+                disk size: 904K
+                cluster_size: 65536
+                backing file: /export/vmimgs2/commitraw-base-f17.img
+                backing file format: raw
+                
+                image: /export/vmimgs2/commitraw-base-f17.img
+                file format: raw
+                virtual size: 1.0G (1073741824 bytes)
+                disk size: 699M
+                [kashyap@moon qemu-n]$ 
+                ======================
+
+[7] List files in base & all snapshots AFTER 'blockcommit'
+                ======================
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/commitraw-base-f17.img ls
+                /export
+                file1.txt
+                file2.txt
+                file3.txt
+                file4.txt
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/snap1-c-rawbase.qcow2 ls
+                /export
+                file1.txt
+                file2.txt
+                file3.txt
+                file4.txt
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/snap2-c-rawbase.qcow2 ls
+                /export
+                file1.txt
+                file2.txt
+                file3.txt
+                file4.txt
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/snap3-c-rawbase.qcow2 ls
+                /export
+                file1.txt
+                file2.txt
+                file3.txt
+                file4.txt
+                [root@moon qemu]# guestfish --ro -i -a /export/vmimgs2/snap4-c-rawbase.qcow2 ls
+                /export
+                file1.txt
+                file2.txt
+                file3.txt
+                file4.txt
+                [root@moon qemu]#
+                ======================
+
+[8] List the disk image sizes AFTER 'blockcommit'
+                ======================
+                [root@moon qemu]# ls -lash /export/vmimgs2/commitraw-base-f17.img
+                700M -rw-r--r--. 1 qemu qemu 1.0G Oct 21 18:48 /export/vmimgs2/commitraw-base-f17.img
+                [root@moon qemu]# 
+                
+                [root@moon qemu]# ls -lash /export/vmimgs2/*rawbase*
+                904K -rw-------. 1 qemu qemu 960K Oct 21 18:47 /export/vmimgs2/snap1-c-rawbase.qcow2
+                840K -rw-------. 1 qemu qemu 896K Oct 21 18:46 /export/vmimgs2/snap2-c-rawbase.qcow2
+                776K -rw-------. 1 qemu qemu 832K Oct 21 18:39 /export/vmimgs2/snap3-c-rawbase.qcow2
+                904K -rw-------. 1 qemu qemu 960K Oct 21 18:48 /export/vmimgs2/snap4-c-rawbase.qcow2
+                [root@moon qemu]# 
+                ======================
+
+[9] Snapshot metadata can be cleaned to reflect the new reality of disk image snapshots:
+
+                # virsh snapshot-delete --domain commitraw-base snap3 --metadata  
+                # virsh snapshot-delete --domain commitraw-base snap2 --metadata  
+                # virsh snapshot-delete --domain commitraw-base snap1 --metadata
+
+
+
+[*** Example-4: Reducing snapshot image chain using "blockpull" ***
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    (0) Assuming 4 external disk-only (live) snapshots were created.
+        
+
+    (1) Let's check the snapshot overlay images size *before* blockpull operation (note the image of 'Active'):
+           ======================
+            # ls -lash /var/lib/libvirt/images/RootBase.img 
+            608M -rw-r--r--. 1 qemu qemu 1.0G Oct 11 17:54 /var/lib/libvirt/images/RootBase.img
+
+            # ls -lash /var/lib/libvirt/images/*Snap*
+            840K -rw-------. 1 qemu qemu 896K Oct 11 17:56 /var/lib/libvirt/images/Snap-1.qcow2
+            392K -rw-------. 1 qemu qemu 448K Oct 11 17:56 /var/lib/libvirt/images/Snap-2.qcow2
+            456K -rw-------. 1 qemu qemu 512K Oct 11 17:56 /var/lib/libvirt/images/Snap-3.qcow2
+            2.9M -rw-------. 1 qemu qemu 3.0M Oct 11 18:10 /var/lib/libvirt/images/Active.qcow2
+           ======================
+
+    (2) Also, check the disk image information of 'Active'. It can noticed that
+        'Active' has Snap-3 as its backing file. 
+           ======================
+            [kashyap@moon qemu-n]$ sudo ./qemu-img info --backing-chain /var/lib/libvirt/images/Active.qcow2
+            image: /var/lib/libvirt/images/Active.qcow2
+            file format: qcow2
+            virtual size: 1.0G (1073741824 bytes)
+            disk size: 520K
+            cluster_size: 65536
+            backing file: /var/lib/libvirt/images/snap3.qcow2
+            backing file format: qcow2
+
+            image: /var/lib/libvirt/images/snap3.qcow2
+            file format: qcow2
+            virtual size: 1.0G (1073741824 bytes)
+            disk size: 776K
+            cluster_size: 65536
+            backing file: /var/lib/libvirt/images/snap2.qcow2
+            backing file format: qcow2
+
+            image: /var/lib/libvirt/images/snap2.qcow2
+            file format: qcow2
+            virtual size: 1.0G (1073741824 bytes)
+            disk size: 712K
+            cluster_size: 65536
+            backing file: /var/lib/libvirt/images/snap1.qcow2
+            backing file format: qcow2
+
+            image: /var/lib/libvirt/images/snap1.qcow2
+            file format: qcow2
+            virtual size: 1.0G (1073741824 bytes)
+            disk size: 392K
+            cluster_size: 65536
+            backing file: /var/lib/libvirt/images/RootBase.img
+            backing file format: raw
+
+            image: /var/lib/libvirt/images/commitraw-base-f17.img
+            file format: raw
+            virtual size: 1.0G (1073741824 bytes)
+            disk size: 699M
+            [kashyap@moon qemu-n]$
+           ======================
+
+
+    (3) Run the **blockpull** command (without specifying --base). So that the backing chain is merged(inclduing RootBase)
+           ======================
+            # virsh blockpull --domain ptest2-base --path /var/lib/libvirt/images/Active.qcow2 --wait --verbose
+            Block Pull: [100 %]
+            Pull complete
+           ======================
+
+
+    (4) Let's again check the snapshot overlay images size *after*
+        blockpull operation. It can be noticed, 'Active' is now considerably larger. 
+            ======================
+            # ls -lash /var/lib/libvirt/images/*Snap*
+             840K -rw-------. 1 qemu qemu 896K Oct 11 17:56 /var/lib/libvirt/images/Snap-1.qcow2
+             392K -rw-------. 1 qemu qemu 448K Oct 11 17:56 /var/lib/libvirt/images/Snap-2.qcow2
+             456K -rw-------. 1 qemu qemu 512K Oct 11 17:56 /var/lib/libvirt/images/Snap-3.qcow2
+            1011M -rw-------. 1 qemu qemu 3.0M Oct 11 18:29 /var/lib/libvirt/images/Active.qcow2
+            ======================
+
+
+    (5) Also, check the disk image information of 'Active'. It can now be
+        noticed that 'Active' is flattened to a standalone image without any backing file.
+            ======================
+            # qemu-img info /var/lib/libvirt/images/Active.qcow2
+            image: /var/lib/libvirt/images/Active.qcow2
+            file format: qcow2
+            virtual size: 1.0G (1073741824 bytes)
+            disk size: 1.0G
+            cluster_size: 65536
+            ======================
+
+
+    (6) We can now clean-up the snapshot tracking metadata by libvirt to reflect the new reality
+            ======================
+            # virsh snapshot-delete --domain RootBase Snap-3 --metadata
+            ======================
+
+        Optionally, one can check, the guest disk contents by invoking guestfish tool(part of libguestfs) READ-ONLY (--ro option below does it) as below
+            ======================
+            # guestfish --ro -i -a /var/lib/libvirt/images/Active.qcow2
+            ======================
+
+
+
+

@@ -1,0 +1,71 @@
+#==================================================#
+root@~$ virsh list
+ Id    Name                           State
+----------------------------------------------------
+ 8     vm1-f17                        running
+
+root@~$ 
+#==================================================#
+root@~$ virsh domblklist vm1-f17
+Target     Source
+------------------------------------------------
+vda        /var/lib/libvirt/images/vm1-f17.qcow2
+
+root@~$ 
+#==================================================#
+root@~$ virsh dumpxml --inactive vm1-f17 > /var/tmp/bc-test.xml
+root@~$
+#==================================================#
+root@~$ diff /etc/libvirt/qemu/vm1-f17.xml /var/tmp/bc-test.xml
+1,7d0
+< <!--
+< WARNING: THIS IS AN AUTO-GENERATED FILE. CHANGES TO IT ARE LIKELY TO BE 
+< OVERWRITTEN AND LOST. Changes to this xml configuration should be made using:
+<   virsh edit vm1-f17
+< or other application using the libvirt API.
+< -->
+< 
+55a49
+> 
+root@~$ 
+#==================================================#
+
+NOTE1 : Currently due to QEMU's limitation, libvirt expects a domain to be trasient. Because, blockcopy jobs last forever until canceled, which implies that they should last across domain restarts if the domain were persistent. But qemu doesn't yet provide a way to restart a copy job on domain restart. So the trick is to temporarily make the domain transient
+
+NOTE 2: Undefining a running domain does not KILL the domain, it just converts it from persistent to transient
+#==================================================#
+root@~$ virsh undefine vm1-f17
+Domain vm1-f17 has been undefined
+
+root@~$
+#==================================================#
+root@~$ virsh list
+ Id    Name                           State
+----------------------------------------------------
+ 8     vm1-f17                        running
+
+root@~$ 
+#==================================================#
+
+#==================================================#
+root@~$ file /etc/libvirt/qemu/vm1-f17.xml
+/etc/libvirt/qemu/vm1-f17.xml: ERROR: cannot open `/etc/libvirt/qemu/vm1-f17.xml' (No such file or directory)
+root@~$ 
+#==================================================#
+root@~$ virsh blockcopy --domain vm1-f17 vda /export/backups/vm1-f17-copy.qcow2 --wait --finish --verbose
+Block Copy: [100 %]
+Successfully copied
+root@~$ 
+#==================================================#
+root@~$ virsh define /var/tmp/bc-test.xml 
+Domain vm1-f17 defined from /var/tmp/bc-test.xml
+#==================================================#
+root@~$ file /etc/libvirt/qemu/vm1-f17.xml
+/etc/libvirt/qemu/vm1-f17.xml: exported SGML document, ASCII text
+root@~$ 
+#==================================================#
+root@~$ sha1sum /var/lib/libvirt/images/vm1-f17.qcow2 ; sha1sum /export/backups/vm1-f17-copy.qcow2 
+3ae5c64f06ba0059f2c0628e20092b3797f08275  /var/lib/libvirt/images/vm1-f17.qcow2
+3ae5c64f06ba0059f2c0628e20092b3797f08275  /export/backups/vm1-f17-copy.qcow2
+root@~$ 
+#==================================================#

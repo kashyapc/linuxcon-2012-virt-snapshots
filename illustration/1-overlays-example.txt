@@ -1,0 +1,10 @@
+query the info
+qemu-img info /var/lib/libvirt/vmimages/base-f17.qcow2
+
+qemu-kvm -m 1024 /var/lib/libvirt/vmimages/base-f17.qcow2 -nographic  
+(exit)
+
+qemu-img create -b base.qcow2 -f qcow2 /var/lib/libvirt/vmimages/overlay1-qcow2
+
+qemu-kvm -m 1024 /var/lib/libvirt/vmimages/overlay-1.qcow2 -nographic
+(exit)

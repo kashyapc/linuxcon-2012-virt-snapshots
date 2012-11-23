@@ -1,0 +1,22 @@
+#!/bin/bash
+
+#1/ list the current block device in use
+virsh domblklist f17-base
+
+#2/ create an external snapshot
+virsh snapshot-create-as --domain f17-base snap1 snap1-desc --disk-only --atomic
+
+#3/ again, list the current block device in use (this would be a new overlay)
+virsh domblklist f17-base
+
+#3.1/ query the current active disk(the new overlay image) to display its backing chain
+qemu-img info f17-base.snap1
+
+#4/ backup original disk image
+
+#5/ we can now merge the contents of original disk image into the current active
+# layer
+virsh blockpull --domain f17-base --path /var/lib/libvirt/images/sn1-of-f17-base.qcow2 --verbose --wait
+
+#6/ Now again query the current active disk to display its backing chain
+qemu-img info f17-base.snap1

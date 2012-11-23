@@ -1,0 +1,666 @@
+.. ----------------------------------------------------------------------
+   In this session, Kashyap Chamarthy will discuss virtual machine snasphots,
+   with disk image files(qcow2 & raw). This session also includes demonstrations
+   and discussion of practical aspects.
+   
+   Note: All these tests were performed with latest qemu-git,libvirt-git (as of
+   11-Oct-2012 on a Fedora-18 alpha machine
+.. ---------------------------------------------------------------------- 
+
+
+Introduction 
+============
+
+A virtual machine snapshot is a view of a virtual machine(its OS & all its
+applications) at a given point in time. So that, one can revert to a known sane
+state, or take backups while the guest is running live. So, before we dive into
+snapshots, let's have an understanding of backing files and overlays.
+
+        
+
+QCOW2 backing files & overlays
+------------------------------
+
+In essence, QCOW2(Qemu Copy-On-Write) gives you an ability to create a base-image,
+and create several 'disposable' copy-on-write overlay disk images on top of the
+base image(also called backing file). Backing files and overlays are
+extremely useful to rapidly instantiate thin-privisoned virtual machines(more on
+it below). Especially quite useful in development & test environments,
+so that one could quickly revert to a known state & discard the overlay.
+
+**Figure-1**
+
+::
+
+  .--------------.    .-------------.    .-------------.    .-------------.
+  |              |    |             |    |             |    |             |
+  | RootBase     |<---| Overlay-1   |<---| Overlay-1A  <--- | Overlay-1B  |
+  | (raw/qcow2)  |    | (qcow2)     |    | (qcow2)     |    | (qcow2)     |
+  '--------------'    '-------------'    '-------------'    '-------------'
+
+The above figure illustrates - RootBase is the backing file for Overlay-1, which
+in turn is backing file for Overlay-2, which in turn is backing file for
+Overlay-3.
+
+**Figure-2**
+::
+
+ .-----------.   .-----------.   .------------.  .------------.  .------------.
+ |           |   |           |   |            |  |            |  |            |
+ | RootBase  |<--- Overlay-1 |<--- Overlay-1A <--- Overlay-1B <--- Overlay-1C |
+ |           |   |           |   |            |  |            |  | (Active)   |
+ '-----------'   '-----------'   '------------'  '------------'  '------------'
+    ^    ^
+    |    |
+    |    |       .-----------.    .------------.
+    |    |       |           |    |            |
+    |    '-------| Overlay-2 |<---| Overlay-2A |
+    |            |           |    | (Active)   |
+    |            '-----------'    '------------'
+    |
+    |
+    |            .-----------.    .------------.
+    |            |           |    |            |
+    '------------| Overlay-3 |<---| Overlay-3A |
+                 |           |    | (Active)   |
+                 '-----------'    '------------'
+                
+The above figure is just another representation which indicates, we can use a
+'single' backing file, and create several overlays -- which can be used further,
+to create overlays on top of them.
+
+
+**NOTE**: Backing files are always opened **read-only**. In other words, once 
+          an overlay is created, its backing file should not be modified(as the
+          overlay depends on a particular state of the backing file). Refer
+          below ('blockcommit' section) for relevant info on this.
+
+
+**Example** :
+
+::
+
+    [FedoraBase.img] ----- <- [Fedora-guest-1.qcow2] <- [Fed-w-updates.qcow2] <- [Fedora-guest-with-updates-1A]
+                     \
+                      \--- <- [Fedora-guest-2.qcow2] <- [Fed-w-updates.qcow2] <- [Fedora-guest-with-updates-2A]
+
+(Arrow to be read as Fed-w-updates.qcow2 has Fedora-guest-1.qcow2 as its backing file.)
+
+In the above example, say, *FedoraBase.img* has a freshly installed Fedora-17 OS on it,
+and let's establish it as our backing file. Now, FedoraBase can be used as a
+read-only 'template' to quickly instantiate two(or more) thinly provisioned
+Fedora-17 guests(say Fedora-guest-1.qcow2, Fedora-guest-2.qcow2) by creating
+QCOW2 overlay files pointing to our backing file. Also, the example & *Figure-2*
+above illustrate that a single root-base image(FedoraBase.img) can be used
+to create multiple overlays -- which can subsequently have their own overlays.
+
+
+    To create two thinly-provisioned Fedora clones(or overlays) using a single
+    backing file, we can invoke qemu-img as below: ::
+
+
+        # qemu-img create -b /export/vmimages/RootBase.img -f qcow2 \
+          /export/vmimages/Fedora-guest-1.qcow2
+
+        # qemu-img create -b /export/vmimages/RootBase.img -f qcow2 \
+          /export/vmimages/Fedora-guest-2.qcow2
+    
+    Now, both the above images *Fedora-guest-1* & *Fedora-guest-2* are ready to
+    boot. Continuting with our example, say, now you want to instantiate a
+    Fedora-17 guest, but this time, with full Fedora updates. This can be
+    accomplished by creating another overlay(Fedora-guest-with-updates-1A) - but
+    this overly would point to 'Fed-w-updates.qcow2' as its backing file (which
+    has the full Fedora updates) ::
+
+         # qemu-img create -b /export/vmimages/Fed-w-updates.qcow2 -f qcow2 \
+           /export/vmimages/Fedora-guest-with-updates-1A.qcow2
+
+
+    Information about a disk image, like virtual size, disk size, backing file(if it
+    exists) can be obtained by using 'qemu-img' as below:
+    ::
+
+        # qemu-img info /export/vmimages/Fedora-guest-with-updates-1A.qcow2
+
+    NOTE: With latest qemu, an entire backing chain can be recursively
+    enumerated by doing:
+    ::
+
+        # qemu-img info --backing-chain /export/vmimages/Fedora-guest-with-updates-1A.qcow2
+       
+
+
+Snapshot Terminology:
+---------------------
+
+    - **Internal Snapshots** -- A single qcow2 image file holds both the saved state
+        & the delta since that saved point. This can be further classified as :-
+
+        (1) **Internal disk snapshot**: The state of the virtual disk at a given
+            point in time. Both the snapshot & delta since the snapshot are
+            stored in the same qcow2 file. Can be taken when the guest is 'live'
+            or 'offline'.
+
+                - Libvirt uses QEMU's 'qemu-img' command when the guest is 'offline'.
+                - Libvirt uses QEMU's 'savevm' command when the guest is 'live'.
+
+        (2) **Internal system checkpoint**: RAM state, device state & the
+            disk-state of a running guest, are all stored in the same originial
+            qcow2 file. Can be taken when the guest is running 'live'.
+
+                - Libvirt uses QEMU's 'savevm' command when the guest is 'live'
+
+
+    - **External Snapshots** -- Here, when a snapshot is taken, the saved state will
+      be stored in one file(from that point, it becomes a read-only backing
+      file) & a new file(overlay) will track the deltas from that saved state.
+      This can be further classified as :-
+
+        (1) **External disk snapshot**: The snapshot of the disk is saved in one
+            file, and the delta since the snapshot is tracked in a new qcow2
+            file. Can be taken when the guest is 'live' or 'offline'.
+
+                - Libvirt uses QEMU's 'transaction' cmd  under the hood, when the
+                  guest is 'live'.
+
+                - Libvirt uses QEMU's 'qemu-img' cmd under the hood  when the
+                  guest is 'offline'(this implementation is in progress, as of
+                  writing this).
+
+        (2) **External system checkpoint**: Here, the guest's disk-state will be
+            saved in one file, its RAM & device-state will be saved in another
+            new file (This implementation is in progress upstream libvirt, as of
+            writing this).
+
+
+
+    - **VM State**: Saves the RAM & device state of a running guest(not 'disk-state') to
+      a file, so that it can be restored later. This simliar to doing hibernate
+      of the system. (NOTE: The disk-state should be unmodified at the time of
+      restoration.) 
+
+            - Libvirt uses QEMU's 'migrate' (to file) cmd under the hood.      
+
+
+
+Creating snapshots
+==================
+    - Whenever an 'external' snapshot is issued, a /new/ overlay image is
+      created to facilitate guest writes, and the previous image becomes a
+      snapshot.
+
+    - **Create a disk-only internal snapshot**
+        
+        (1) If I have a guest named 'f17vm1', to create an offline or online
+            'internal' snapshot called 'snap1' with description 'snap1-desc' ::
+
+            # virsh snapshot-create-as f17vm1  snap1 snap1-desc 
+       
+        (2) List the snapshot ; and query using *qemu-img* tool to view
+            the image info & its internal snapshot details ::
+
+            # virsh snapshot-list f17vm1
+            # qemu-img info /home/kashyap/vmimages/f17vm1.qcow2
+            
+
+
+    - **Create a disk-only external snapshot** :
+
+        (1) List the block device associated with the guest. ::
+
+                # virsh domblklist f17-base
+                Target     Source
+                ---------------------------------------------
+                vda        /export/vmimages/f17-base.qcow2
+
+                #
+
+        (2) Create external disk-only snapshot (while the guest is *running*). ::
+
+                # virsh snapshot-create-as --domain f17-base snap1 snap1-desc \
+                --disk-only --diskspec vda,snapshot=external,file=/export/vmimages/sn1-of-f17-base.qcow2 \
+                --atomic
+                Domain snapshot snap1 created
+                #
+              
+                    * Once the above command is issued, the original disk-image
+                    of f17-base will become the backing_file & a new overlay
+                    image is created to track the new changes. Here on, libvirt
+                    will use this overlay for further write operations(while
+                    using the original image as a read-only backing_file).
+
+        (3) Now, list the block device associated(use cmd from step-1, above)
+            with the guest,again, to ensure it reflects the new overlay image as
+            the current block device in use. ::
+
+                # virsh domblklist f17-base
+                Target     Source
+                ----------------------------------------------------
+                vda        /export/vmimages/sn1-of-f17-base.qcow2
+
+                #
+
+
+        
+
+Reverting to snapshots
+======================
+As of writing this, reverting to 'Internal Snapshots'(system checkpoint or
+disk-only) is possible.
+
+    To revert to a snapshot named 'snap1' of domain f17vm1 ::
+
+    # virsh snapshot-revert --domain f17vm1 snap1
+
+Reverting to 'external disk snapshots' using *snapshot-revert* is a little more
+tricky, as it involves slightly complicated process of dealing with additional
+snapshot files - whether to merge 'base' images into 'top' or to merge other way
+round ('top' into 'base').
+
+That said, there are a couple of ways to deal with external snapshot files by
+merging them to reduce the external snapshot disk image chain by performing
+either a **blockpull** or **blockcommit** (more on this below). 
+
+Further improvements on this front is in work upstream libvirt as of writing
+this.
+
+
+
+Merging snapshot files
+======================
+External snapshots are incredibly useful. But, with plenty of external snapshot
+files, there comes a problem of maintaining and tracking all these inidivdual
+files. At a later point in time, we might want to 'merge' some of these snapshot
+files (either backing_files into overlays or vice-versa) to reduce the length of
+the image chain. To accomplish that, there are two mechanisms:
+
+    + blockcommit: merges data from  **top** into **base** (in other
+      words, merge overlays into backing files).
+
+
+    + blockpull: Populates a disk image with data from its backing file. Or
+      merges data from **base** into **top** (in other words, merge backing files
+      into overlays).
+
+
+blockcommit
+-----------
+
+Block Commit allows you to merge from a 'top' image(within a disk backing file
+chain) into a lower-level 'base' image. To rephrase, it allows you to
+merge overlays into backing files. Once the **blockcommit** operation is finished,
+any portion that depends on the 'top' image, will now be pointing to the 'base'.
+
+This is useful in flattening(or collapsing or reducing) backing file chain
+length after taking several external snapshots.
+
+
+Let's understand with an illustration below:
+
+We have a base image called 'RootBase', which has a disk image chain with 4
+external snapshots. With 'Active' as the current active-layer, where 'live' guest
+writes happen. There are a few possibilities of resulting image chains that we
+can end up with, using 'blockcommit' : 
+
+    (1) Data from Snap-1, Snap-2 and Snap-3 can be merged into 'RootBase'
+        (resulting in RootBase becoming the backing_file of 'Active', and thus
+        invalidating Snap-1, Snap-2, & Snap-3).
+
+    (2) Data from Snap-1 and Snap-2 can be merged into RootBase(resulting in
+        Rootbase becoming the backing_file of Snap-3, and thus invalidating
+        Snap-1 & Snap-2).
+
+    (3) Data from Snap-1 can be merged into RootBase(resulting in RootBase
+        becoming the backing_file of Snap-2, and thus invalidating Snap-1).
+    
+    (4) Data from Snap-2 can be merged into Snap-1(resulting in Snap-1 becoming
+        the backing_file of Snap-3, and thus invalidating Snap-2).
+
+    (5) Data from Snap-3 can be merged into Snap-2(resulting in Snap-2 becoming
+        the backing_file for 'Active', and thus invalidating Snap-3).
+
+    (6) Data from Snap-2 and Snap-3 can be merged into Snap-1(resulting in
+        Snap-1 becoming the backing_file of 'Active', and thus invalidating
+        Snap-2 & Snap-3).
+
+    NOTE: Eventually(not supported in qemu as of writing this), we can also
+          merge down the 'Active' layer(the top-most overlay) into its
+          backing_files.  Once it is supported, the 'top' argument can become
+          optional, and default to active layer.
+
+
+(The below figure illustrates case (6) from the above)
+
+**Figure-3**
+::
+
+ .------------.  .------------.  .------------.  .------------.  .------------.
+ |            |  |            |  |            |  |            |  |            |
+ | RootBase   <---  Snap-1    <---  Snap-2    <---  Snap-3    <---  Snap-4    |
+ |            |  |            |  |            |  |            |  | (Active)   |
+ '------------'  '------------'  '------------'  '------------'  '------------'
+                                  /                  |
+                                 /                   |
+                                /  commit data       |
+                               /                     |
+                              /                      |
+                             /                       |
+                            v           commit data  |
+ .------------.  .------------. <--------------------'           .------------.
+ |            |  |            |                                  |            |
+ | RootBase   <---  Snap-1    |<---------------------------------|  Snap-4    |
+ |            |  |            |       Backing File               | (Active)   |
+ '------------'  '------------'                                  '------------'
+
+For instance, if we have the below scenario:
+    
+    Actual: [base] <- sn1 <- sn2 <- sn3 <- sn4(this is active)
+
+    Desired:  [base] <- sn1 <- sn4  (thus invalidating sn2,sn3) 
+    
+      Any of the below two methods is valid (as of 17-Oct-2012 qemu-git). With
+      method-a, operation will be faster & correct if we don't care about
+      sn2(because, it'll be invalidated). Note that, method-b is slower, but sn2
+      will remain valid. (Also note that, the guest is 'live' in all these cases).
+    
+        **(method-a)**:
+            ::
+
+            # virsh blockcommit --domain f17 vda --base /export/vmimages/sn1.qcow2 --top /export/vmimages/sn3.qcow2 --wait --verbose
+            
+        [OR]
+    
+        **(method-b)**:
+            ::
+
+             # virsh blockcommit --domain f17 vda  --base /export/vmimages/sn2.qcow2 --top /export/vmimages/sn3.qcow2 --wait --verbose
+             # virsh blockcommit --domain f17 vda  --base /export/vmimages/sn1.qcow2 --top /export/vmimages/sn2.qcow2 --wait --verbose
+    
+       NOTE: If we had to do manually with *qemu-img* cmd, we can only do method-b at the moment.
+
+
+**Figure-4**
+::
+
+ .------------.  .------------.  .------------.  .------------.  .------------.
+ |            |  |            |  |            |  |            |  |            |
+ | RootBase   <---  Snap-1    <---  Snap-2    <---  Snap-3    <---  Snap-4    |
+ |            |  |            |  |            |  |            |  | (Active)   |
+ '------------'  '------------'  '------------'  '------------'  '------------'
+                   /                  |             |
+                  /                   |             |
+                 /                    |             |
+    commit data /         commit data |             |
+               /                      |             |
+              /                       | commit data |
+             v                        |             |
+ .------------.<----------------------|-------------'            .------------.
+ |            |<----------------------'                          |            |
+ | RootBase   |                                                  |  Snap-4    |
+ |            |<-------------------------------------------------| (Active)   |
+ '------------'                  Backing File                    '------------'
+
+
+The above figure is another representation of reducing the disk image chain
+using blockcommit. Data from Snap-1, Snap-2, Snap-3 are merged(/committed)
+into RootBase, & now the current 'Active' image now pointing to 'RootBase' as its
+backing file(instead of Snap-3, which was the case *before* blockcommit). Note
+that, now intermediate images Snap-1, Snap-1, Snap-3 will be invalidated(as they were
+dependent on a particular state of RootBase).
+
+blockpull
+---------
+Block Pull(also called 'Block Stream' in QEMU's paralance)  allows you to merge
+into 'base' from a 'top' image(within a disk backing file chain). To rephrase it
+allows  merging backing files into an overlay(active). This works in the
+opposite side of 'blockcommit' to flatten the snapshot chain. At the moment,
+**blockpull** can pull only into the active layer(the top-most image). It's
+worth noting here that, intermediate images are not invalidated once a blockpull
+operation is complete (while blockcommit, invalidates them).
+
+
+Consider the below illustration:
+
+**Figure-5**
+::
+
+ .------------.  .------------.  .------------.  .------------.  .------------.
+ |            |  |            |  |            |  |            |  |            |
+ | RootBase   <---  Snap-1    <---  Snap-2    <---  Snap-3    <---  Snap-4    |
+ |            |  |            |  |            |  |            |  | (Active)   |
+ '------------'  '------------'  '------------'  '------------'  '------------'
+                          |                 |              \
+                          |                 |               \
+                          |                 |                \
+                          |                 |                 \ stream data
+                          |                 | stream data      \
+                          | stream data     |                   \
+                          |                 |                    v
+      .------------.      |                 '--------------->  .------------.
+      |            |      '--------------------------------->  |            |
+      | RootBase   |                                           |  Snap-4    |
+      |            | <---------------------------------------- | (Active)   |
+      '------------'                 Backing File              '------------'
+
+
+
+The above figure illustrates that, using block-copy we can pull data from
+Snap-1, Snap-2 and Snap-3 into the 'Active' layer, resulting in 'RootBase'
+becoming the backing file for the 'Active' image (instead of 'Snap-3', which was
+the case before doing the blockpull operation).
+
+The command flow would be:
+    (1) Assuming a external disk-only snapshot was created as mentioned in
+        *Creating Snapshots* section:
+
+    (2) A blockpull operation can be issued this way, to achieve the desired
+        state of *Figure-5*-- [RootBase] <- [Active]. ::
+
+             # virsh blockpull --domain RootBase --path var/lib/libvirt/images/active.qcow2 --base /var/lib/libvirt/images/RootBase.qcow2  --wait --verbose
+
+
+    As a follow up, we can do the below to clean-up the snapshot *tracking*
+    metadata by libvirt (note: the below does not 'remove' the files, it
+    just cleans up the snapshot tracking metadata). ::
+ 
+            # virsh snapshot-delete --domain RootBase Snap-3 --metadata
+            # virsh snapshot-delete --domain RootBase Snap-2 --metadata
+            # virsh snapshot-delete --domain RootBase Snap-1 --metadata
+
+
+
+
+**Figure-6**
+::
+
+ .------------.  .------------.  .------------.  .------------.  .------------.
+ |            |  |            |  |            |  |            |  |            |
+ | RootBase   <---  Snap-1    <---  Snap-2    <---  Snap-3    <---  Snap-4    |
+ |            |  |            |  |            |  |            |  | (Active)   |
+ '------------'  '------------'  '------------'  '------------'  '------------'
+       |                  |              |                  \
+       |                  |              |                   \
+       |                  |              |                    \  stream data
+       |                  |              | stream data         \
+       |                  |              |                      \
+       |                  | stream data  |                       \
+       |  stream data     |              '------------------>     v
+       |                  |                                    .--------------.
+       |                  '--------------------------------->  |              |
+       |                                                       |  Snap-4      |
+       '---------------------------------------------------->  | (Active)     |
+                                                               '--------------'
+                                                                 'Standalone'
+                                                                 (w/o backing
+                                                                 file)  
+
+The above  figure illustrates, once blockpull operation is complete, by
+pulling/streaming data from RootBase, Snap-1, Snap-2, Snap-3 into 'Active', all
+the backing files can be discarded and 'Active' now will be a standalone image
+without any backing files.
+
+Command flow would be:
+    (0) Assuming 4 external disk-only (live) snapshots were created as
+        mentioned in *Creating Snapshots* section,
+
+    (1) Let's check the snapshot overlay images size *before* blockpull operation (note the image of 'Active'):
+        :: 
+
+            # ls -lash /var/lib/libvirt/images/RootBase.img 
+            608M -rw-r--r--. 1 qemu qemu 1.0G Oct 11 17:54 /var/lib/libvirt/images/RootBase.img
+
+            # ls -lash /var/lib/libvirt/images/*Snap*
+            840K -rw-------. 1 qemu qemu 896K Oct 11 17:56 /var/lib/libvirt/images/Snap-1.qcow2
+            392K -rw-------. 1 qemu qemu 448K Oct 11 17:56 /var/lib/libvirt/images/Snap-2.qcow2
+            456K -rw-------. 1 qemu qemu 512K Oct 11 17:56 /var/lib/libvirt/images/Snap-3.qcow2
+            2.9M -rw-------. 1 qemu qemu 3.0M Oct 11 18:10 /var/lib/libvirt/images/Active.qcow2
+
+    (2) Also, check the disk image information of 'Active'. It can noticed that
+        'Active' has Snap-3 as its backing file. ::
+
+            # qemu-img info /var/lib/libvirt/images/Active.qcow2
+            image: /var/lib/libvirt/images/Active.qcow2
+            file format: qcow2
+            virtual size: 1.0G (1073741824 bytes)
+            disk size: 2.9M
+            cluster_size: 65536
+            backing file: /var/lib/libvirt/images/Snap-3.qcow2
+
+    (3) Do the **blockpull** operation. ::
+    
+            # virsh blockpull --domain ptest2-base --path /var/lib/libvirt/images/Active.qcow2 --wait --verbose
+            Block Pull: [100 %]
+            Pull complete
+
+    (4) Let's again check the snapshot overlay images size *after*
+        blockpull operation. It can be noticed, 'Active' is now considerably larger. ::
+            
+            # ls -lash /var/lib/libvirt/images/*Snap*
+             840K -rw-------. 1 qemu qemu 896K Oct 11 17:56 /var/lib/libvirt/images/Snap-1.qcow2
+             392K -rw-------. 1 qemu qemu 448K Oct 11 17:56 /var/lib/libvirt/images/Snap-2.qcow2
+             456K -rw-------. 1 qemu qemu 512K Oct 11 17:56 /var/lib/libvirt/images/Snap-3.qcow2
+            1011M -rw-------. 1 qemu qemu 3.0M Oct 11 18:29 /var/lib/libvirt/images/Active.qcow2
+
+
+    (5) Also, check the disk image information of 'Active'. It can now be
+        noticed that 'Active' is a standalone image without any backing file -
+        which is the desired state of *Figure-6*.::
+
+            # qemu-img info /var/lib/libvirt/images/Active.qcow2
+            image: /var/lib/libvirt/images/Active.qcow2
+            file format: qcow2
+            virtual size: 1.0G (1073741824 bytes)
+            disk size: 1.0G
+            cluster_size: 65536
+
+    (6) We can now clean-up the snapshot tracking metadata by libvirt to
+        reflect the new reality ::
+
+            # virsh snapshot-delete --domain RootBase Snap-3 --metadata
+
+    (7) Optionally, one can check, the guest disk contents by invoking
+        *guestfish* tool(part of *libguestfs*)  **READ-ONLY** (*--ro* option
+        below does it) as below ::
+
+            # guestfish --ro -i -a /var/lib/libvirt/images/Active.qcow2
+
+        
+Deleting snapshots (and 'offline commit')
+=========================================
+
+Deleting (live/offline) *Internal Snapshots* (where the originial & all the named snapshots
+are stored in a single QCOW2 file),  is quite straight forward. ::
+
+    # virsh snapshot-delete --domain f17vm --snapshotname snap6
+
+    [OR]
+
+    # virsh snapshot-delete f17vm snap6
+
+Deleting External snapshots (offline), Libvirt has not acquired the capability.
+But, it can be done via *qemu-img* manipulation.
+
+Say, we have this image chain(the guest is *offline* here): **base <- sn1 <- sn2 <- sn3**
+(arrow to be read as 'sn3 has sn2 as its backing file').
+
+
+And, we want to delete the second snapshot(sn2). It's possible to do it in two
+ways:
+
+
+    - **Method (1)**: **base <- sn1 <- sn3**   (by copying sn2 into sn1)    
+    - **Method (2)**: **base <- sn1 <- sn3**   (by copying sn2 into sn3)
+
+Method (1)
+----------
+To end up with this image chain : **base <- sn1 <- sn3**  (by copying *sn2* into *sn1*)
+
+**NOTE**: This is only possible *if* sn1 isn't used by more images as their backing
+file, or they'd get corrupted!!
+
+    (a) We're doing an *offline commit* (similar to what  *blockcommit* can do
+    to an *online* guest). ::
+
+        # qemu-img commit sn2.qcow2
+      
+            - This will *commit* the changes from sn2 into its backing file(which is
+              sn1).
+
+    (b) Now that we've comitted changes from sn2 into sn1, let's change the
+        backing file link in sn3 to point to sn1. ::
+    
+        # qemu-img rebase -u -b sn1.qcow2 sn3.qcow2
+    
+            - **NOTE**: This is 'Unsafe mode' -- in this mode, only the backing file
+              name is changed w/o any checks on the file contents. The user must
+              take care of specifying the correct new backing file, or the
+              guest-visible. This mode is useful for renaming or moving the
+              backing file to somewhere else.  It can be used without an
+              accessible old backing file, i.e. you can use it to fix an image
+              whose backing file has already been moved/renamed.
+
+
+    (c) Now, we can delete the sn2 disk image(as the changes are now committed
+        to sn1). ::
+
+          # rm sn2.qcow2
+
+
+Method (2)
+----------
+To end up with this image chain : **base <- sn1 <- sn3**  (by copying *sn2* into *sn3*)
+
+    (a) Copy contents of sn2(the old backing file) into sn3, and change the backing file link of sn3 to sn1::
+
+        # qemu-img rebase -b sn1.qcow2 sn3.qcow2
+ 
+            - Apart from changing backing file link of sn3 to sn1, the above cmd
+              will it also /copy/ the contents from sn2 into sn3).
+
+            - In other words: This is 'Safe mode', which is the default --
+              any clusters that differ between the new  backing_file(in this
+              case, sn1) and the old backing file(in this case, sn2) of
+              filename(in this case, sn3) are merged into filename(sn3), before
+              actually changing the backing file.
+
+    (b) Now, we can delete the sn2 disk image(as the changes are now committed to
+        sn1). ::
+
+        # rm sn2.qcow2
+                
+        
+
+Upcoming improvements (in libvirt 1.0.0 & beyond)
+=================================================
+
+- Creation of offline External [system checkpoint/offline] Snapshots (using
+  virsh). At the moment, we can do 'offline' external snapshots manually using 'qemu-img'.
+
+- Snapshot revert/delete improvements for external snapshots
+
+- Live/Offline 'blockcommit' enhancements
+
+- Storage migration with Blockcopy
+
+
+

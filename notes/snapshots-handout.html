@@ -1,0 +1,998 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
+<title></title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 7056 2011-06-17 10:50:48Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+  overflow: hidden;
+}
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left, object.align-left {
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right, object.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: inherit }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block, pre.math {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document">
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+In this session, Kashyap Chamarthy will discuss virtual machine snasphots,
+with disk image files(qcow2 & raw). This session also includes demonstrations
+and discussion of practical aspects.
+
+Note: All these tests were performed with latest qemu-git,libvirt-git (as of
+11-Oct-2012 on a Fedora-18 alpha machine -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<div class="section" id="introduction">
+<h1>Introduction</h1>
+<p>A virtual machine snapshot is a view of a virtual machine(its OS &amp; all its
+applications) at a given point in time. So that, one can revert to a known sane
+state, or take backups while the guest is running live. So, before we dive into
+snapshots, let's have an understanding of backing files and overlays.</p>
+<div class="section" id="qcow2-backing-files-overlays">
+<h2>QCOW2 backing files &amp; overlays</h2>
+<p>In essence, QCOW2(Qemu Copy-On-Write) gives you an ability to create a base-image,
+and create several 'disposable' copy-on-write overlay disk images on top of the
+base image(also called backing file). Backing files and overlays are
+extremely useful to rapidly instantiate thin-privisoned virtual machines(more on
+it below). Especially quite useful in development &amp; test environments,
+so that one could quickly revert to a known state &amp; discard the overlay.</p>
+<p><strong>Figure-1</strong></p>
+<pre class="literal-block">
+.--------------.    .-------------.    .-------------.    .-------------.
+|              |    |             |    |             |    |             |
+| RootBase     |&lt;---| Overlay-1   |&lt;---| Overlay-1A  &lt;--- | Overlay-1B  |
+| (raw/qcow2)  |    | (qcow2)     |    | (qcow2)     |    | (qcow2)     |
+'--------------'    '-------------'    '-------------'    '-------------'
+</pre>
+<p>The above figure illustrates - RootBase is the backing file for Overlay-1, which
+in turn is backing file for Overlay-2, which in turn is backing file for
+Overlay-3.</p>
+<p><strong>Figure-2</strong></p>
+<pre class="literal-block">
+.-----------.   .-----------.   .------------.  .------------.  .------------.
+|           |   |           |   |            |  |            |  |            |
+| RootBase  |&lt;--- Overlay-1 |&lt;--- Overlay-1A &lt;--- Overlay-1B &lt;--- Overlay-1C |
+|           |   |           |   |            |  |            |  | (Active)   |
+'-----------'   '-----------'   '------------'  '------------'  '------------'
+   ^    ^
+   |    |
+   |    |       .-----------.    .------------.
+   |    |       |           |    |            |
+   |    '-------| Overlay-2 |&lt;---| Overlay-2A |
+   |            |           |    | (Active)   |
+   |            '-----------'    '------------'
+   |
+   |
+   |            .-----------.    .------------.
+   |            |           |    |            |
+   '------------| Overlay-3 |&lt;---| Overlay-3A |
+                |           |    | (Active)   |
+                '-----------'    '------------'
+</pre>
+<p>The above figure is just another representation which indicates, we can use a
+'single' backing file, and create several overlays -- which can be used further,
+to create overlays on top of them.</p>
+<dl class="docutils">
+<dt><strong>NOTE</strong>: Backing files are always opened <strong>read-only</strong>. In other words, once</dt>
+<dd>an overlay is created, its backing file should not be modified(as the
+overlay depends on a particular state of the backing file). Refer
+below ('blockcommit' section) for relevant info on this.</dd>
+</dl>
+<p><strong>Example</strong> :</p>
+<pre class="literal-block">
+[FedoraBase.img] ----- &lt;- [Fedora-guest-1.qcow2] &lt;- [Fed-w-updates.qcow2] &lt;- [Fedora-guest-with-updates-1A]
+                 \
+                  \--- &lt;- [Fedora-guest-2.qcow2] &lt;- [Fed-w-updates.qcow2] &lt;- [Fedora-guest-with-updates-2A]
+</pre>
+<p>(Arrow to be read as Fed-w-updates.qcow2 has Fedora-guest-1.qcow2 as its backing file.)</p>
+<p>In the above example, say, <em>FedoraBase.img</em> has a freshly installed Fedora-17 OS on it,
+and let's establish it as our backing file. Now, FedoraBase can be used as a
+read-only 'template' to quickly instantiate two(or more) thinly provisioned
+Fedora-17 guests(say Fedora-guest-1.qcow2, Fedora-guest-2.qcow2) by creating
+QCOW2 overlay files pointing to our backing file. Also, the example &amp; <em>Figure-2</em>
+above illustrate that a single root-base image(FedoraBase.img) can be used
+to create multiple overlays -- which can subsequently have their own overlays.</p>
+<blockquote>
+<p>To create two thinly-provisioned Fedora clones(or overlays) using a single
+backing file, we can invoke qemu-img as below:</p>
+<pre class="literal-block">
+# qemu-img create -b /export/vmimages/RootBase.img -f qcow2 \
+  /export/vmimages/Fedora-guest-1.qcow2
+
+# qemu-img create -b /export/vmimages/RootBase.img -f qcow2 \
+  /export/vmimages/Fedora-guest-2.qcow2
+</pre>
+<p>Now, both the above images <em>Fedora-guest-1</em> &amp; <em>Fedora-guest-2</em> are ready to
+boot. Continuting with our example, say, now you want to instantiate a
+Fedora-17 guest, but this time, with full Fedora updates. This can be
+accomplished by creating another overlay(Fedora-guest-with-updates-1A) - but
+this overly would point to 'Fed-w-updates.qcow2' as its backing file (which
+has the full Fedora updates)</p>
+<pre class="literal-block">
+# qemu-img create -b /export/vmimages/Fed-w-updates.qcow2 -f qcow2 \
+  /export/vmimages/Fedora-guest-with-updates-1A.qcow2
+</pre>
+<p>Information about a disk image, like virtual size, disk size, backing file(if it
+exists) can be obtained by using 'qemu-img' as below:</p>
+<pre class="literal-block">
+# qemu-img info /export/vmimages/Fedora-guest-with-updates-1A.qcow2
+</pre>
+<p>NOTE: With latest qemu, an entire backing chain can be recursively
+enumerated by doing:</p>
+<pre class="literal-block">
+# qemu-img info --backing-chain /export/vmimages/Fedora-guest-with-updates-1A.qcow2
+</pre>
+</blockquote>
+</div>
+<div class="section" id="snapshot-terminology">
+<h2>Snapshot Terminology:</h2>
+<blockquote>
+<ul>
+<li><dl class="first docutils">
+<dt><strong>Internal Snapshots</strong> -- A single qcow2 image file holds both the saved state</dt>
+<dd><p class="first">&amp; the delta since that saved point. This can be further classified as :-</p>
+<ol class="last arabic">
+<li><p class="first"><strong>Internal disk snapshot</strong>: The state of the virtual disk at a given
+point in time. Both the snapshot &amp; delta since the snapshot are
+stored in the same qcow2 file. Can be taken when the guest is 'live'
+or 'offline'.</p>
+<blockquote>
+<ul class="simple">
+<li>Libvirt uses QEMU's 'qemu-img' command when the guest is 'offline'.</li>
+<li>Libvirt uses QEMU's 'savevm' command when the guest is 'live'.</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first"><strong>Internal system checkpoint</strong>: RAM state, device state &amp; the
+disk-state of a running guest, are all stored in the same originial
+qcow2 file. Can be taken when the guest is running 'live'.</p>
+<blockquote>
+<ul class="simple">
+<li>Libvirt uses QEMU's 'savevm' command when the guest is 'live'</li>
+</ul>
+</blockquote>
+</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><p class="first"><strong>External Snapshots</strong> -- Here, when a snapshot is taken, the saved state will
+be stored in one file(from that point, it becomes a read-only backing
+file) &amp; a new file(overlay) will track the deltas from that saved state.
+This can be further classified as :-</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first"><strong>External disk snapshot</strong>: The snapshot of the disk is saved in one
+file, and the delta since the snapshot is tracked in a new qcow2
+file. Can be taken when the guest is 'live' or 'offline'.</p>
+<blockquote>
+<ul class="simple">
+<li>Libvirt uses QEMU's 'transaction' cmd  under the hood, when the
+guest is 'live'.</li>
+<li>Libvirt uses QEMU's 'qemu-img' cmd under the hood  when the
+guest is 'offline'(this implementation is in progress, as of
+writing this).</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first"><strong>External system checkpoint</strong>: Here, the guest's disk-state will be
+saved in one file, its RAM &amp; device-state will be saved in another
+new file (This implementation is in progress upstream libvirt, as of
+writing this).</p>
+</li>
+</ol>
+</blockquote>
+</li>
+<li><p class="first"><strong>VM State</strong>: Saves the RAM &amp; device state of a running guest(not 'disk-state') to
+a file, so that it can be restored later. This simliar to doing hibernate
+of the system. (NOTE: The disk-state should be unmodified at the time of
+restoration.)</p>
+<blockquote>
+<ul class="simple">
+<li>Libvirt uses QEMU's 'migrate' (to file) cmd under the hood.</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+</div>
+</div>
+<div class="section" id="creating-snapshots">
+<h1>Creating snapshots</h1>
+<blockquote>
+<ul>
+<li><p class="first">Whenever an 'external' snapshot is issued, a /new/ overlay image is
+created to facilitate guest writes, and the previous image becomes a
+snapshot.</p>
+</li>
+<li><p class="first"><strong>Create a disk-only internal snapshot</strong></p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">If I have a guest named 'f17vm1', to create an offline or online
+'internal' snapshot called 'snap1' with description 'snap1-desc'</p>
+<pre class="literal-block">
+# virsh snapshot-create-as f17vm1  snap1 snap1-desc
+</pre>
+</li>
+<li><p class="first">List the snapshot ; and query using <em>qemu-img</em> tool to view
+the image info &amp; its internal snapshot details</p>
+<pre class="literal-block">
+# virsh snapshot-list f17vm1
+# qemu-img info /home/kashyap/vmimages/f17vm1.qcow2
+</pre>
+</li>
+</ol>
+</blockquote>
+</li>
+<li><p class="first"><strong>Create a disk-only external snapshot</strong> :</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">List the block device associated with the guest.</p>
+<pre class="literal-block">
+# virsh domblklist f17-base
+Target     Source
+---------------------------------------------
+vda        /export/vmimages/f17-base.qcow2
+
+#
+</pre>
+</li>
+<li><p class="first">Create external disk-only snapshot (while the guest is <em>running</em>).</p>
+<pre class="literal-block">
+# virsh snapshot-create-as --domain f17-base snap1 snap1-desc \
+--disk-only --diskspec vda,snapshot=external,file=/export/vmimages/sn1-of-f17-base.qcow2 \
+--atomic
+Domain snapshot snap1 created
+#
+
+    * Once the above command is issued, the original disk-image
+    of f17-base will become the backing_file &amp; a new overlay
+    image is created to track the new changes. Here on, libvirt
+    will use this overlay for further write operations(while
+    using the original image as a read-only backing_file).
+</pre>
+</li>
+<li><p class="first">Now, list the block device associated(use cmd from step-1, above)
+with the guest,again, to ensure it reflects the new overlay image as
+the current block device in use.</p>
+<pre class="literal-block">
+# virsh domblklist f17-base
+Target     Source
+----------------------------------------------------
+vda        /export/vmimages/sn1-of-f17-base.qcow2
+
+#
+</pre>
+</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="reverting-to-snapshots">
+<h1>Reverting to snapshots</h1>
+<p>As of writing this, reverting to 'Internal Snapshots'(system checkpoint or
+disk-only) is possible.</p>
+<blockquote>
+<p>To revert to a snapshot named 'snap1' of domain f17vm1</p>
+<pre class="literal-block">
+# virsh snapshot-revert --domain f17vm1 snap1
+</pre>
+</blockquote>
+<p>Reverting to 'external disk snapshots' using <em>snapshot-revert</em> is a little more
+tricky, as it involves slightly complicated process of dealing with additional
+snapshot files - whether to merge 'base' images into 'top' or to merge other way
+round ('top' into 'base').</p>
+<p>That said, there are a couple of ways to deal with external snapshot files by
+merging them to reduce the external snapshot disk image chain by performing
+either a <strong>blockpull</strong> or <strong>blockcommit</strong> (more on this below).</p>
+<p>Further improvements on this front is in work upstream libvirt as of writing
+this.</p>
+</div>
+<div class="section" id="merging-snapshot-files">
+<h1>Merging snapshot files</h1>
+<p>External snapshots are incredibly useful. But, with plenty of external snapshot
+files, there comes a problem of maintaining and tracking all these inidivdual
+files. At a later point in time, we might want to 'merge' some of these snapshot
+files (either backing_files into overlays or vice-versa) to reduce the length of
+the image chain. To accomplish that, there are two mechanisms:</p>
+<blockquote>
+<ul class="simple">
+<li>blockcommit: merges data from  <strong>top</strong> into <strong>base</strong> (in other
+words, merge overlays into backing files).</li>
+<li>blockpull: Populates a disk image with data from its backing file. Or
+merges data from <strong>base</strong> into <strong>top</strong> (in other words, merge backing files
+into overlays).</li>
+</ul>
+</blockquote>
+<div class="section" id="blockcommit">
+<h2>blockcommit</h2>
+<p>Block Commit allows you to merge from a 'top' image(within a disk backing file
+chain) into a lower-level 'base' image. To rephrase, it allows you to
+merge overlays into backing files. Once the <strong>blockcommit</strong> operation is finished,
+any portion that depends on the 'top' image, will now be pointing to the 'base'.</p>
+<p>This is useful in flattening(or collapsing or reducing) backing file chain
+length after taking several external snapshots.</p>
+<p>Let's understand with an illustration below:</p>
+<p>We have a base image called 'RootBase', which has a disk image chain with 4
+external snapshots. With 'Active' as the current active-layer, where 'live' guest
+writes happen. There are a few possibilities of resulting image chains that we
+can end up with, using 'blockcommit' :</p>
+<blockquote>
+<ol class="arabic simple">
+<li>Data from Snap-1, Snap-2 and Snap-3 can be merged into 'RootBase'
+(resulting in RootBase becoming the backing_file of 'Active', and thus
+invalidating Snap-1, Snap-2, &amp; Snap-3).</li>
+<li>Data from Snap-1 and Snap-2 can be merged into RootBase(resulting in
+Rootbase becoming the backing_file of Snap-3, and thus invalidating
+Snap-1 &amp; Snap-2).</li>
+<li>Data from Snap-1 can be merged into RootBase(resulting in RootBase
+becoming the backing_file of Snap-2, and thus invalidating Snap-1).</li>
+<li>Data from Snap-2 can be merged into Snap-1(resulting in Snap-1 becoming
+the backing_file of Snap-3, and thus invalidating Snap-2).</li>
+<li>Data from Snap-3 can be merged into Snap-2(resulting in Snap-2 becoming
+the backing_file for 'Active', and thus invalidating Snap-3).</li>
+<li>Data from Snap-2 and Snap-3 can be merged into Snap-1(resulting in
+Snap-1 becoming the backing_file of 'Active', and thus invalidating
+Snap-2 &amp; Snap-3).</li>
+</ol>
+<dl class="docutils">
+<dt>NOTE: Eventually(not supported in qemu as of writing this), we can also</dt>
+<dd>merge down the 'Active' layer(the top-most overlay) into its
+backing_files.  Once it is supported, the 'top' argument can become
+optional, and default to active layer.</dd>
+</dl>
+</blockquote>
+<p>(The below figure illustrates case (6) from the above)</p>
+<p><strong>Figure-3</strong></p>
+<pre class="literal-block">
+.------------.  .------------.  .------------.  .------------.  .------------.
+|            |  |            |  |            |  |            |  |            |
+| RootBase   &lt;---  Snap-1    &lt;---  Snap-2    &lt;---  Snap-3    &lt;---  Snap-4    |
+|            |  |            |  |            |  |            |  | (Active)   |
+'------------'  '------------'  '------------'  '------------'  '------------'
+                                 /                  |
+                                /                   |
+                               /  commit data       |
+                              /                     |
+                             /                      |
+                            /                       |
+                           v           commit data  |
+.------------.  .------------. &lt;--------------------'           .------------.
+|            |  |            |                                  |            |
+| RootBase   &lt;---  Snap-1    |&lt;---------------------------------|  Snap-4    |
+|            |  |            |       Backing File               | (Active)   |
+'------------'  '------------'                                  '------------'
+</pre>
+<p>For instance, if we have the below scenario:</p>
+<blockquote>
+<p>Actual: [base] &lt;- sn1 &lt;- sn2 &lt;- sn3 &lt;- sn4(this is active)</p>
+<p>Desired:  [base] &lt;- sn1 &lt;- sn4  (thus invalidating sn2,sn3)</p>
+<blockquote>
+<p>Any of the below two methods is valid (as of 17-Oct-2012 qemu-git). With
+method-a, operation will be faster &amp; correct if we don't care about
+sn2(because, it'll be invalidated). Note that, method-b is slower, but sn2
+will remain valid. (Also note that, the guest is 'live' in all these cases).</p>
+<blockquote>
+<blockquote>
+<dl class="docutils">
+<dt><strong>(method-a)</strong>:</dt>
+<dd><pre class="first last literal-block">
+# virsh blockcommit --domain f17 vda --base /export/vmimages/sn1.qcow2 --top /export/vmimages/sn3.qcow2 --wait --verbose
+</pre>
+</dd>
+</dl>
+<p>[OR]</p>
+<dl class="docutils">
+<dt><strong>(method-b)</strong>:</dt>
+<dd><pre class="first last literal-block">
+# virsh blockcommit --domain f17 vda  --base /export/vmimages/sn2.qcow2 --top /export/vmimages/sn3.qcow2 --wait --verbose
+# virsh blockcommit --domain f17 vda  --base /export/vmimages/sn1.qcow2 --top /export/vmimages/sn2.qcow2 --wait --verbose
+</pre>
+</dd>
+</dl>
+</blockquote>
+<p>NOTE: If we had to do manually with <em>qemu-img</em> cmd, we can only do method-b at the moment.</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p><strong>Figure-4</strong></p>
+<pre class="literal-block">
+.------------.  .------------.  .------------.  .------------.  .------------.
+|            |  |            |  |            |  |            |  |            |
+| RootBase   &lt;---  Snap-1    &lt;---  Snap-2    &lt;---  Snap-3    &lt;---  Snap-4    |
+|            |  |            |  |            |  |            |  | (Active)   |
+'------------'  '------------'  '------------'  '------------'  '------------'
+                  /                  |             |
+                 /                   |             |
+                /                    |             |
+   commit data /         commit data |             |
+              /                      |             |
+             /                       | commit data |
+            v                        |             |
+.------------.&lt;----------------------|-------------'            .------------.
+|            |&lt;----------------------'                          |            |
+| RootBase   |                                                  |  Snap-4    |
+|            |&lt;-------------------------------------------------| (Active)   |
+'------------'                  Backing File                    '------------'
+</pre>
+<p>The above figure is another representation of reducing the disk image chain
+using blockcommit. Data from Snap-1, Snap-2, Snap-3 are merged(/committed)
+into RootBase, &amp; now the current 'Active' image now pointing to 'RootBase' as its
+backing file(instead of Snap-3, which was the case <em>before</em> blockcommit). Note
+that, now intermediate images Snap-1, Snap-1, Snap-3 will be invalidated(as they were
+dependent on a particular state of RootBase).</p>
+</div>
+<div class="section" id="blockpull">
+<h2>blockpull</h2>
+<p>Block Pull(also called 'Block Stream' in QEMU's paralance)  allows you to merge
+into 'base' from a 'top' image(within a disk backing file chain). To rephrase it
+allows  merging backing files into an overlay(active). This works in the
+opposite side of 'blockcommit' to flatten the snapshot chain. At the moment,
+<strong>blockpull</strong> can pull only into the active layer(the top-most image). It's
+worth noting here that, intermediate images are not invalidated once a blockpull
+operation is complete (while blockcommit, invalidates them).</p>
+<p>Consider the below illustration:</p>
+<p><strong>Figure-5</strong></p>
+<pre class="literal-block">
+.------------.  .------------.  .------------.  .------------.  .------------.
+|            |  |            |  |            |  |            |  |            |
+| RootBase   &lt;---  Snap-1    &lt;---  Snap-2    &lt;---  Snap-3    &lt;---  Snap-4    |
+|            |  |            |  |            |  |            |  | (Active)   |
+'------------'  '------------'  '------------'  '------------'  '------------'
+                         |                 |              \
+                         |                 |               \
+                         |                 |                \
+                         |                 |                 \ stream data
+                         |                 | stream data      \
+                         | stream data     |                   \
+                         |                 |                    v
+     .------------.      |                 '---------------&gt;  .------------.
+     |            |      '---------------------------------&gt;  |            |
+     | RootBase   |                                           |  Snap-4    |
+     |            | &lt;---------------------------------------- | (Active)   |
+     '------------'                 Backing File              '------------'
+</pre>
+<p>The above figure illustrates that, using block-copy we can pull data from
+Snap-1, Snap-2 and Snap-3 into the 'Active' layer, resulting in 'RootBase'
+becoming the backing file for the 'Active' image (instead of 'Snap-3', which was
+the case before doing the blockpull operation).</p>
+<dl class="docutils">
+<dt>The command flow would be:</dt>
+<dd><ol class="first arabic">
+<li><p class="first">Assuming a external disk-only snapshot was created as mentioned in
+<em>Creating Snapshots</em> section:</p>
+</li>
+<li><p class="first">A blockpull operation can be issued this way, to achieve the desired
+state of <em>Figure-5</em>-- [RootBase] &lt;- [Active].</p>
+<pre class="literal-block">
+# virsh blockpull --domain RootBase --path var/lib/libvirt/images/active.qcow2 --base /var/lib/libvirt/images/RootBase.qcow2  --wait --verbose
+</pre>
+</li>
+</ol>
+<p>As a follow up, we can do the below to clean-up the snapshot <em>tracking</em>
+metadata by libvirt (note: the below does not 'remove' the files, it
+just cleans up the snapshot tracking metadata).</p>
+<pre class="last literal-block">
+# virsh snapshot-delete --domain RootBase Snap-3 --metadata
+# virsh snapshot-delete --domain RootBase Snap-2 --metadata
+# virsh snapshot-delete --domain RootBase Snap-1 --metadata
+</pre>
+</dd>
+</dl>
+<p><strong>Figure-6</strong></p>
+<pre class="literal-block">
+.------------.  .------------.  .------------.  .------------.  .------------.
+|            |  |            |  |            |  |            |  |            |
+| RootBase   &lt;---  Snap-1    &lt;---  Snap-2    &lt;---  Snap-3    &lt;---  Snap-4    |
+|            |  |            |  |            |  |            |  | (Active)   |
+'------------'  '------------'  '------------'  '------------'  '------------'
+      |                  |              |                  \
+      |                  |              |                   \
+      |                  |              |                    \  stream data
+      |                  |              | stream data         \
+      |                  |              |                      \
+      |                  | stream data  |                       \
+      |  stream data     |              '------------------&gt;     v
+      |                  |                                    .--------------.
+      |                  '---------------------------------&gt;  |              |
+      |                                                       |  Snap-4      |
+      '----------------------------------------------------&gt;  | (Active)     |
+                                                              '--------------'
+                                                                'Standalone'
+                                                                (w/o backing
+                                                                file)
+</pre>
+<p>The above  figure illustrates, once blockpull operation is complete, by
+pulling/streaming data from RootBase, Snap-1, Snap-2, Snap-3 into 'Active', all
+the backing files can be discarded and 'Active' now will be a standalone image
+without any backing files.</p>
+<dl class="docutils">
+<dt>Command flow would be:</dt>
+<dd><ol class="first last arabic" start="0">
+<li><p class="first">Assuming 4 external disk-only (live) snapshots were created as
+mentioned in <em>Creating Snapshots</em> section,</p>
+</li>
+<li><p class="first">Let's check the snapshot overlay images size <em>before</em> blockpull operation (note the image of 'Active'):</p>
+<pre class="literal-block">
+# ls -lash /var/lib/libvirt/images/RootBase.img
+608M -rw-r--r--. 1 qemu qemu 1.0G Oct 11 17:54 /var/lib/libvirt/images/RootBase.img
+
+# ls -lash /var/lib/libvirt/images/*Snap*
+840K -rw-------. 1 qemu qemu 896K Oct 11 17:56 /var/lib/libvirt/images/Snap-1.qcow2
+392K -rw-------. 1 qemu qemu 448K Oct 11 17:56 /var/lib/libvirt/images/Snap-2.qcow2
+456K -rw-------. 1 qemu qemu 512K Oct 11 17:56 /var/lib/libvirt/images/Snap-3.qcow2
+2.9M -rw-------. 1 qemu qemu 3.0M Oct 11 18:10 /var/lib/libvirt/images/Active.qcow2
+</pre>
+</li>
+<li><p class="first">Also, check the disk image information of 'Active'. It can noticed that
+'Active' has Snap-3 as its backing file.</p>
+<pre class="literal-block">
+# qemu-img info /var/lib/libvirt/images/Active.qcow2
+image: /var/lib/libvirt/images/Active.qcow2
+file format: qcow2
+virtual size: 1.0G (1073741824 bytes)
+disk size: 2.9M
+cluster_size: 65536
+backing file: /var/lib/libvirt/images/Snap-3.qcow2
+</pre>
+</li>
+<li><p class="first">Do the <strong>blockpull</strong> operation.</p>
+<pre class="literal-block">
+# virsh blockpull --domain ptest2-base --path /var/lib/libvirt/images/Active.qcow2 --wait --verbose
+Block Pull: [100 %]
+Pull complete
+</pre>
+</li>
+<li><p class="first">Let's again check the snapshot overlay images size <em>after</em>
+blockpull operation. It can be noticed, 'Active' is now considerably larger.</p>
+<pre class="literal-block">
+# ls -lash /var/lib/libvirt/images/*Snap*
+ 840K -rw-------. 1 qemu qemu 896K Oct 11 17:56 /var/lib/libvirt/images/Snap-1.qcow2
+ 392K -rw-------. 1 qemu qemu 448K Oct 11 17:56 /var/lib/libvirt/images/Snap-2.qcow2
+ 456K -rw-------. 1 qemu qemu 512K Oct 11 17:56 /var/lib/libvirt/images/Snap-3.qcow2
+1011M -rw-------. 1 qemu qemu 3.0M Oct 11 18:29 /var/lib/libvirt/images/Active.qcow2
+</pre>
+</li>
+<li><p class="first">Also, check the disk image information of 'Active'. It can now be
+noticed that 'Active' is a standalone image without any backing file -
+which is the desired state of <em>Figure-6</em>.:</p>
+<pre class="literal-block">
+# qemu-img info /var/lib/libvirt/images/Active.qcow2
+image: /var/lib/libvirt/images/Active.qcow2
+file format: qcow2
+virtual size: 1.0G (1073741824 bytes)
+disk size: 1.0G
+cluster_size: 65536
+</pre>
+</li>
+<li><p class="first">We can now clean-up the snapshot tracking metadata by libvirt to
+reflect the new reality</p>
+<pre class="literal-block">
+# virsh snapshot-delete --domain RootBase Snap-3 --metadata
+</pre>
+</li>
+<li><p class="first">Optionally, one can check, the guest disk contents by invoking
+<em>guestfish</em> tool(part of <em>libguestfs</em>)  <strong>READ-ONLY</strong> (<em>--ro</em> option
+below does it) as below</p>
+<pre class="literal-block">
+# guestfish --ro -i -a /var/lib/libvirt/images/Active.qcow2
+</pre>
+</li>
+</ol>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="deleting-snapshots-and-offline-commit">
+<h1>Deleting snapshots (and 'offline commit')</h1>
+<p>Deleting (live/offline) <em>Internal Snapshots</em> (where the originial &amp; all the named snapshots
+are stored in a single QCOW2 file),  is quite straight forward.</p>
+<pre class="literal-block">
+# virsh snapshot-delete --domain f17vm --snapshotname snap6
+
+[OR]
+
+# virsh snapshot-delete f17vm snap6
+</pre>
+<p>Deleting External snapshots (offline), Libvirt has not acquired the capability.
+But, it can be done via <em>qemu-img</em> manipulation.</p>
+<p>Say, we have this image chain(the guest is <em>offline</em> here): <strong>base &lt;- sn1 &lt;- sn2 &lt;- sn3</strong>
+(arrow to be read as 'sn3 has sn2 as its backing file').</p>
+<p>And, we want to delete the second snapshot(sn2). It's possible to do it in two
+ways:</p>
+<blockquote>
+<ul class="simple">
+<li><strong>Method (1)</strong>: <strong>base &lt;- sn1 &lt;- sn3</strong>   (by copying sn2 into sn1)</li>
+<li><strong>Method (2)</strong>: <strong>base &lt;- sn1 &lt;- sn3</strong>   (by copying sn2 into sn3)</li>
+</ul>
+</blockquote>
+<div class="section" id="method-1">
+<h2>Method (1)</h2>
+<p>To end up with this image chain : <strong>base &lt;- sn1 &lt;- sn3</strong>  (by copying <em>sn2</em> into <em>sn1</em>)</p>
+<p><strong>NOTE</strong>: This is only possible <em>if</em> sn1 isn't used by more images as their backing
+file, or they'd get corrupted!!</p>
+<blockquote>
+<p>(a) We're doing an <em>offline commit</em> (similar to what  <em>blockcommit</em> can do
+to an <em>online</em> guest).</p>
+<pre class="literal-block">
+# qemu-img commit sn2.qcow2
+
+    - This will *commit* the changes from sn2 into its backing file(which is
+      sn1).
+</pre>
+<ol class="loweralpha" start="2">
+<li><p class="first">Now that we've comitted changes from sn2 into sn1, let's change the
+backing file link in sn3 to point to sn1.</p>
+<pre class="literal-block">
+# qemu-img rebase -u -b sn1.qcow2 sn3.qcow2
+</pre>
+<blockquote>
+<ul class="simple">
+<li><strong>NOTE</strong>: This is 'Unsafe mode' -- in this mode, only the backing file
+name is changed w/o any checks on the file contents. The user must
+take care of specifying the correct new backing file, or the
+guest-visible. This mode is useful for renaming or moving the
+backing file to somewhere else.  It can be used without an
+accessible old backing file, i.e. you can use it to fix an image
+whose backing file has already been moved/renamed.</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first">Now, we can delete the sn2 disk image(as the changes are now committed
+to sn1).</p>
+<pre class="literal-block">
+# rm sn2.qcow2
+</pre>
+</li>
+</ol>
+</blockquote>
+</div>
+<div class="section" id="method-2">
+<h2>Method (2)</h2>
+<p>To end up with this image chain : <strong>base &lt;- sn1 &lt;- sn3</strong>  (by copying <em>sn2</em> into <em>sn3</em>)</p>
+<blockquote>
+<ol class="loweralpha">
+<li><p class="first">Copy contents of sn2(the old backing file) into sn3, and change the backing file link of sn3 to sn1:</p>
+<pre class="literal-block">
+# qemu-img rebase -b sn1.qcow2 sn3.qcow2
+</pre>
+<blockquote>
+<ul class="simple">
+<li>Apart from changing backing file link of sn3 to sn1, the above cmd
+will it also /copy/ the contents from sn2 into sn3).</li>
+<li>In other words: This is 'Safe mode', which is the default --
+any clusters that differ between the new  backing_file(in this
+case, sn1) and the old backing file(in this case, sn2) of
+filename(in this case, sn3) are merged into filename(sn3), before
+actually changing the backing file.</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first">Now, we can delete the sn2 disk image(as the changes are now committed to
+sn1).</p>
+<pre class="literal-block">
+# rm sn2.qcow2
+</pre>
+</li>
+</ol>
+</blockquote>
+</div>
+</div>
+<div class="section" id="upcoming-improvements-in-libvirt-1-0-0-beyond">
+<h1>Upcoming improvements (in libvirt 1.0.0 &amp; beyond)</h1>
+<ul class="simple">
+<li>Creation of offline External [system checkpoint/offline] Snapshots (using
+virsh). At the moment, we can do 'offline' external snapshots manually using 'qemu-img'.</li>
+<li>Snapshot revert/delete improvements for external snapshots</li>
+<li>Live/Offline 'blockcommit' enhancements</li>
+<li>Storage migration with Blockcopy</li>
+</ul>
+</div>
+</div>
+</body>
+</html>

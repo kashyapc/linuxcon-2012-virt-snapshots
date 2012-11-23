@@ -1,0 +1,3 @@
+#!/bin/bash
+
+qemu-img info --backing-chain vm2.f17.snap3

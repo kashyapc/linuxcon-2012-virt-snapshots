@@ -1,0 +1,3 @@
+#!/bin/bash
+virsh snapshot-create-as --domain vm1-f17 snap1 "snap1-desc"
+
